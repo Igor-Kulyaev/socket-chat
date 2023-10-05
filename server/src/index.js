@@ -9,8 +9,8 @@ const app = express();
 const port = 5000;
 
 const errorHandler = (error, req, res, next) => {
-  console.log(`Status code: ${error.statusCode || 500}, Status message: ${res.statusMessage}, Error message: ${error.message}, Url: ${req.url}, Method: ${req.method}`);
-  res.status(error.statusCode).json(error.message);
+  console.log(`Status code: ${error.statusCode || 500}, Error message: ${error.message}, Url: ${req.url}, Method: ${req.method}`);
+  res.status(error.statusCode || 500).json({message: error.message || 'Internal server error'});
 }
 
 const corsOptions = {
