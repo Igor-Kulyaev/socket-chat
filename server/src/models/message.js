@@ -1,38 +1,20 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const userSchema = mongoose.Schema({
-  username:{
-    type:String,
-    unique: true,
-    required: true,
+const messageSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
   },
-  firstName:{
-    type:String,
-    required: true,
+  message: String,
+  date: { type: Date, default: Date.now },
+  conversationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Conversation',
   },
-  lastName:{
-    type:String,
-    required: true,
-  },
-  email:{
-    type:String,
-    unique: true,
-    required: true,
-  },
-  password: {
-    type:String,
-    required: true,
-  },
-  role: {
-    type:String,
-    enum: ["user", "admin"],
-    required: true,
-  },
-  authType:{
-    type:String,
-    enum: ["internal", "google", "facebook"],
-    required: true,
-  }
 });
 
-module.exports = mongoose.model("User", userSchema);
+const Message = mongoose.model('Message', messageSchema);
+
+module.exports = {
+  Message
+}
