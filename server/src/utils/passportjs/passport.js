@@ -8,7 +8,7 @@ const User = require('../../models/user'); // Assuming your user model is in a s
 
 const options = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: config.jwtSecret,
+  secretOrKey: config.jwtAccessSecret,
 };
 
 passport.use(

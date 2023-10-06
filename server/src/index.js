@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const {connectDB} = require("./database/mongoose");
-const passport = require('./utils/auth/authUtils');
+const passport = require('./utils/passportjs/passport');
 const authRoutes = require('./router/authRoutes');
 const ApplicationError = require("./utils/error/ApplicationError");
 
@@ -22,6 +23,7 @@ const corsOptions = {
 
 app.use(passport.initialize());
 app.use(express.json());
+app.use(cookieParser());
 // app.use(cors(corsOptions));
 
 app.use('/', authRoutes);

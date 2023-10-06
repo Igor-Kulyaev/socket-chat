@@ -1,4 +1,6 @@
 module.exports = {
-  jwtSecret: 'your-secret-key',
-  jwtExpiration: 600, // ten minutes
+  jwtAccessSecret: 'jwtAccessSecret',
+  jwtRefreshSecret: 'jwtRefreshSecret',
+  jwtAccessExpiration: 600, // ten minutes
+  jwtRefreshExpiration: 720, // twelve minutes
 };

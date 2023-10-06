@@ -1,3 +1,6 @@
+const jwt = require('jsonwebtoken');
+const config = require('../config/config');
+const ApplicationError = require("./error/ApplicationError");
 const createJWTPayload = (data) => {
   return {
     username: data.username,
@@ -7,6 +10,15 @@ const createJWTPayload = (data) => {
   }
 }
 
+const validateRefreshToken = (token) => {
+  try {
+    return jwt.verify(token, config.jwtRefreshSecret);
+  } catch (error) {
+    throw new ApplicationError(500, 'Refresh token is not valid');
+  }
+}
+
 module.exports = {
   createJWTPayload,
+  validateRefreshToken,
 }
