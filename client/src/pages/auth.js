@@ -2,9 +2,17 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {Button, TextField} from "@mui/material";
 import { useForm } from "react-hook-form";
+import api from "@/utils/api";
+import {useRouter} from "next/router";
+
+function AuthSkeleton() {
+  return (
+    <div>Auth skeleton</div>
+  )
+}
 
 function AuthTabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -26,15 +34,106 @@ function AuthTabPanel(props) {
   );
 }
 
-export default function AuthorizationComponent() {
+function AuthRegistration() {
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
+  const router = useRouter();
+  const onSubmit = async (data) => {
+    console.log(data);
+    try {
+      const result = await api.post('register', data, );
+      console.log('result', result);
+      localStorage.setItem(
+        "token",
+        result.data.token
+      );
+      await router.push("/chat");
+
+    } catch (error) {
+      console.log('error', error);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
+        <TextField id="outlined-basic" label="Username" variant="outlined" {...register("username")} />
+      </Box>
+      <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
+        <TextField id="outlined-basic" label="First name" variant="outlined" {...register("firstName")} />
+      </Box>
+      <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
+        <TextField id="outlined-basic" label="Last name" variant="outlined" {...register("lastName")} />
+      </Box>
+      <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
+        <TextField id="outlined-basic" label="Email" variant="outlined" {...register("email")} />
+      </Box>
+      <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
+        <TextField id="outlined-basic" label="Password" variant="outlined" {...register("password")}/>
+      </Box>
+      <Box sx={{display: "flex", justifyContent: "center"}}>
+        <Button variant="contained" type="submit" sx={{marginRight: "60px"}}>Submit</Button>
+        <Button color="secondary" variant="contained" type="reset" sx={{}}>Reset</Button>
+      </Box>
+    </form>
+  )
+}
+
+function AuthLogin() {
+  const { register, handleSubmit, watch, formState: { errors } } = useForm();
+  const router = useRouter();
+  const onSubmit = async (data) => {
+    console.log(data);
+    try {
+      const result = await api.post('login', data, );
+      console.log('result', result);
+      localStorage.setItem(
+        "token",
+        result.data.token
+      );
+      await router.push("/chat");
+
+    } catch (error) {
+      console.log('error', error);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
+        <TextField id="outlined-basic" label="Username" variant="outlined" {...register("username")} />
+      </Box>
+      <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
+        <TextField id="outlined-basic" label="Password" variant="outlined" {...register("password")}/>
+      </Box>
+      <Box sx={{display: "flex", justifyContent: "center"}}>
+        <Button variant="contained" type="submit" sx={{marginRight: "60px"}}>Submit</Button>
+        <Button color="secondary" variant="contained" type="reset" sx={{}}>Reset</Button>
+      </Box>
+    </form>
+  )
+}
+
+export default function AuthorizationComponent() {
   const [value, setValue] = useState(0);
+  const router = useRouter();
+  const [isInitialRender, setIsInitialRender] = useState(true);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
 
-  const onSubmit = data => console.log(data);
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      router.push("/chat");
+    } else {
+      setIsInitialRender(false);
+    }
+  }, []);
+
+  if (isInitialRender) {
+    return <AuthSkeleton />
+  }
 
   return (
     <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100vw", height: "100vh" }}>
@@ -47,41 +146,10 @@ export default function AuthorizationComponent() {
           </Tabs>
         </Box>
         <AuthTabPanel value={value} index={0}>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-              <TextField id="outlined-basic" label="Username" variant="outlined" {...register("username")} />
-            </Box>
-            <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-              <TextField id="outlined-basic" label="First name" variant="outlined" {...register("firstName")} />
-            </Box>
-            <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-              <TextField id="outlined-basic" label="Last name" variant="outlined" {...register("lastName")} />
-            </Box>
-            <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-              <TextField id="outlined-basic" label="Email" variant="outlined" {...register("email")} />
-            </Box>
-            <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-              <TextField id="outlined-basic" label="Password" variant="outlined" {...register("password")}/>
-            </Box>
-            <Box sx={{display: "flex", justifyContent: "center"}}>
-              <Button variant="contained" type="submit" sx={{marginRight: "60px"}}>Submit</Button>
-              <Button color="secondary" variant="contained" type="reset" sx={{}}>Reset</Button>
-            </Box>
-          </form>
+          <AuthRegistration/>
         </AuthTabPanel>
         <AuthTabPanel value={value} index={1}>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-              <TextField id="outlined-basic" label="Username" variant="outlined" {...register("username")} />
-            </Box>
-            <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-              <TextField id="outlined-basic" label="Password" variant="outlined" {...register("password")}/>
-            </Box>
-            <Box sx={{display: "flex", justifyContent: "center"}}>
-              <Button variant="contained" type="submit" sx={{marginRight: "60px"}}>Submit</Button>
-              <Button color="secondary" variant="contained" type="reset" sx={{}}>Reset</Button>
-            </Box>
-          </form>
+          <AuthLogin/>
         </AuthTabPanel>
       </Box>
     </Box>
