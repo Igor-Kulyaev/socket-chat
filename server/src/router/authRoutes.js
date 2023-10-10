@@ -35,7 +35,7 @@ router.post('/register', async (req, res, next) => {
       expiresIn: '10m',
     });
     const refreshToken = jwt.sign(payload, config.jwtRefreshSecret, {
-      expiresIn: '12m',
+      expiresIn: '15m',
     });
 
     const token = new Token({
@@ -46,7 +46,7 @@ router.post('/register', async (req, res, next) => {
     // Save the token to the database
     const savedToken = await token.save();
 
-    res.cookie('refreshToken', refreshToken, {maxAge: 720, httpOnly: true});
+    res.cookie('refreshToken', refreshToken, {maxAge: 720000, httpOnly: true});
     res.status(201).json({ token: accessToken });
   } catch (error) {
     console.error('Error during registration:', error);
@@ -69,10 +69,10 @@ router.post('/login', async (req, res, next) => {
     const payload = createJWTPayload(user);
 
     const accessToken = jwt.sign(payload, config.jwtAccessSecret, {
-      expiresIn: '10m',
+      expiresIn: '1m',
     });
     const refreshToken = jwt.sign(payload, config.jwtRefreshSecret, {
-      expiresIn: '12m',
+      expiresIn: '1m',
     });
 
     const updatedOrCreatedToken = await Token.findOneAndUpdate(
@@ -87,7 +87,9 @@ router.post('/login', async (req, res, next) => {
       }
     )
 
-    res.cookie('refreshToken', refreshToken, {maxAge: 720, httpOnly: true});
+    console.log('refreshToken', refreshToken);
+
+    res.cookie('refreshToken', refreshToken, {maxAge: 720000, httpOnly: true});
     res.status(200).json({ token: accessToken });
   } catch (error) {
     console.error('Error during login:', error);
@@ -127,7 +129,7 @@ router.get('/refresh', async (req, res, next) => {
       expiresIn: '10m',
     });
     const newRefreshToken = jwt.sign(createJWTPayload(tokenPayload), config.jwtRefreshSecret, {
-      expiresIn: '12m',
+      expiresIn: '15m',
     });
 
     const updatedToken = await Token.findOneAndUpdate(
@@ -142,7 +144,7 @@ router.get('/refresh', async (req, res, next) => {
       }
     )
 
-    res.cookie('refreshToken', newRefreshToken, {maxAge: 720, httpOnly: true});
+    res.cookie('refreshToken', newRefreshToken, {maxAge: 720000, httpOnly: true});
     res.status(200).json({ token: newAccessToken });
   } catch (error) {
     console.error('Error during refresh:', error);
