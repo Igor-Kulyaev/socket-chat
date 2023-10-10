@@ -6,7 +6,8 @@ const messageSchema = new mongoose.Schema({
     ref: 'User',
   },
   message: String,
-  date: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
   conversationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Conversation',

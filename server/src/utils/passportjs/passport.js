@@ -1,14 +1,12 @@
-// passport.js
 const passport = require('passport');
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
-const config = require('../../config/config'); // Your JWT configuration file
-
-const User = require('../../models/user'); // Assuming your user model is in a separate file
+const jwtConfig = require('../../config/jwtConfig');
+const User = require('../../models/user');
 
 const options = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: config.jwtAccessSecret,
+  secretOrKey: jwtConfig.jwtAccessSecret,
 };
 
 passport.use(
