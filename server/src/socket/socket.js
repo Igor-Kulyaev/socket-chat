@@ -3,6 +3,8 @@ const jwtConfig = require("../config/jwtConfig");
 const User = require("../models/user");
 const {registerUser} = require("../controllers/authController");
 const {Token} = require("../models/token");
+const {Conversation} = require("../models/conversation");
+const {Message} = require("../models/message");
 
 const activeSockets = {};
 const setupSocket = (io) => {
@@ -53,10 +55,53 @@ const setupSocket = (io) => {
     console.log('users', users);
     io.emit('users-list', formattedUsers);
 
-    socket.on('message', async function (message) {
-      console.log('message at backend', message);
-      const foundSocket = activeSockets["6523f0684dcf928861788fc7"];
-      foundSocket.emit('message', 'response from backend');
+    socket.on('message', async function (formData) {
+      console.log('message at backend', formData);
+      try {
+        // Check if there is a conversation with the specified members
+        let conversation = await Conversation.findOne({
+          members: {$all: [socket.data.userData._id, formData.to._id]},
+        });
+
+        if (!conversation) {
+          // If no conversation is found, create a new conversation
+          conversation = new Conversation({
+            members: [socket.data.userData._id, formData.to._id],
+          });
+          await conversation.save();
+        }
+        console.log('Found or created conversation:', conversation);
+
+        // Create a new message
+        const message = new Message({
+          userId: socket.data.userData._id,
+          message: formData.message,
+          conversationId: conversation._id,
+        });
+
+        await message.save();
+
+        // Continue with your logic
+        console.log('Message created:', message);
+
+        const recipientSocket = activeSockets[formData.to._id];
+        if (recipientSocket) {
+          recipientSocket.emit('message', message);
+        }
+      } catch (error) {
+        console.error('Error handling conversation:', error);
+      }
+      // const foundSocket = activeSockets["6523f0684dcf928861788fc7"];
+      // foundSocket.emit('message', 'response from backend');
+    })
+
+    socket.on('disconnect', () => {
+      delete activeSockets[socket.data.userData._id];
+      const formattedUsers = users.map((user) => {
+        return {...user, online: !!activeSockets[user._id]}
+      })
+      console.log('activeSockets keys', Object.keys(activeSockets));
+      io.emit('users-list', formattedUsers);
     })
 
     socket.on('logout', async () => {
