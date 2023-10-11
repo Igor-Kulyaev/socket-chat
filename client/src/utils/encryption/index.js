@@ -4,8 +4,6 @@ export const USER_IP = {
   IP_ADDRESS: "",
 };
 
-export const FAILED_DECRYPTION = 'Failed decryption';
-
 export const encryptToken = (jwtToken, secretKey) => {
   return CryptoJS.AES.encrypt(jwtToken, secretKey).toString();
 }
@@ -15,6 +13,6 @@ export const decryptToken = (encryptedToken, secretKey) => {
     const decryptedBytes = CryptoJS.AES.decrypt(encryptedToken, secretKey);
     return decryptedBytes.toString(CryptoJS.enc.Utf8);
   } catch (error) {
-    return FAILED_DECRYPTION;
+    return null;
   }
 }
