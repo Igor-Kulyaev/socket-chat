@@ -1,31 +1,31 @@
 import {useEffect, useState} from "react";
-import {GeneralSkeleton} from "@/components/GeneralSkeleton";
+import {ChatSkeleton} from "@/components/ChatSkeleton";
 import { useRouter } from 'next/router'
+import axios from "axios";
 import api from "@/utils/api";
 import { io } from "socket.io-client";
 import Button from "@mui/material/Button";
-import {NewConnectionModal} from "@/components/NewConnectionModal";
-import {Modal} from "@mui/material";
+import {AppBar, Divider, Drawer, IconButton, List, Modal, Toolbar} from "@mui/material";
+import MenuIcon from '@mui/icons-material/Menu';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import InboxIcon from '@mui/icons-material/MoveToInbox';
+import MailIcon from '@mui/icons-material/Mail';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-
-const style = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 400,
-  bgcolor: 'background.paper',
-  border: '2px solid #000',
-  boxShadow: 24,
-  p: 4,
-};
+import {decryptToken, USER_IP} from "@/utils/encryption";
+import {useAuthorization} from "@/hooks/useAuthorization";
 
 const TOKEN_VERIFICATION_STATUS = {
   initial: "initial",
   verified: "verified",
   notVerified: "notVerfied",
 }
+
+const drawerWidth = 240;
 
 const RedirectForNotVerified = () => {
   const router = useRouter();
@@ -40,16 +40,20 @@ const RedirectForNotVerified = () => {
 export const ProtectedRoute = ({children}) => {
   const [verificationStatus, setVerificationStatus] = useState(TOKEN_VERIFICATION_STATUS.initial);
   const [socket, setSocket] = useState(null);
-  const [open, setOpen] = useState(false);
-  const handleOpen = () => setOpen(true);
+  const router = useRouter();
+  const [usersList, setUsersList] = useState([]);
+  const {authUser, setAuthUser} = useAuthorization();
 
   useEffect(() => {
     const verifyAccessToken = async () => {
       try {
+        console.log('ip address', USER_IP.IP_ADDRESS);
         const result = await api.get('verify-token');
         console.log('result for verification', result);
+        setAuthUser(result.data.user);
         setVerificationStatus(TOKEN_VERIFICATION_STATUS.verified);
       } catch (error) {
+        console.log('error for verification', error);
         localStorage.removeItem("token");
         setVerificationStatus(TOKEN_VERIFICATION_STATUS.notVerified);
       }
@@ -57,6 +61,7 @@ export const ProtectedRoute = ({children}) => {
 
     const connectSocket = async () => {
       if (localStorage.getItem("token")) {
+        // const decryptedToken = decryptToken(localStorage.getItem("token"), USER_IP.IP_ADDRESS);
         const socket = io('http://localhost:5000', {
           transports: ['websocket'],
           auth: {
@@ -78,7 +83,11 @@ export const ProtectedRoute = ({children}) => {
         console.log('received data from backend', data);
       })
       socket.on("disconnect", () => {
-        handleOpen();
+        router.push("/expired-session");
+      })
+      socket.on("users-list", (data) => {
+        console.log('data', data);
+        setUsersList(data);
       })
       return () => socket.disconnect(true);
     }
@@ -91,32 +100,60 @@ export const ProtectedRoute = ({children}) => {
     socket.emit('message', "Hello world");
   }
 
+  const logout = () => {
+    if (socket) {
+      socket.emit('logout');
+      localStorage.removeItem("token");
+    }
+  }
+
   const renderContent = (status) => {
     switch(status) {
       case TOKEN_VERIFICATION_STATUS.initial: {
-        return <GeneralSkeleton/>
+        return <ChatSkeleton/>
       }
       case TOKEN_VERIFICATION_STATUS.verified: {
         return (
-          <>
-            <Button variant="contained" onClick={emitMessage}>Emit message</Button>
-            <div>
-              <Button onClick={handleOpen}>Open modal</Button>
-              <Modal
-                open={open}
-              >
-                <Box sx={style}>
-                  <Typography id="modal-modal-title" variant="h6" component="h2">
-                    Oops...
-                  </Typography>
-                  <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-                    You have started a new session in separate tab.
-                  </Typography>
-                </Box>
-              </Modal>
-            </div>
-          {children}
-          </>
+          <Box>
+            {/*<Button variant="contained" onClick={emitMessage}>Emit message</Button>*/}
+            <AppBar position="static">
+              <Toolbar style={{ justifyContent: 'flex-end' }}>
+                <Button color="inherit" onClick={logout}>Logout</Button>
+              </Toolbar>
+            </AppBar>
+            <Drawer
+              sx={{
+                width: drawerWidth,
+                flexShrink: 0,
+                '& .MuiDrawer-paper': {
+                  width: drawerWidth,
+                  boxSizing: 'border-box',
+                },
+              }}
+              variant="permanent"
+              anchor="left"
+            >
+              <Toolbar>
+                <Typography variant="h6" noWrap component="div">
+                  Socket Chat App
+                </Typography>
+              </Toolbar>
+              <Divider />
+              <List>
+                {usersList.map((user, index) => (
+                  <ListItem key={index} disablePadding>
+                    <ListItemButton>
+                      <ListItemIcon>
+                        <AccountCircleIcon color={user.online ? "success" : "error"}/>
+                      </ListItemIcon>
+                      <ListItemText primary={`${user.firstName} ${user.lastName} ${user._id === authUser._id ? "(You)" : ""}`} />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </List>
+            </Drawer>
+          {/*{children}*/}
+          </Box>
         )
       }
       case TOKEN_VERIFICATION_STATUS.notVerified: {

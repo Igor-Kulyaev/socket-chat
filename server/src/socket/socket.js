@@ -1,6 +1,8 @@
 const jwt = require("jsonwebtoken");
 const jwtConfig = require("../config/jwtConfig");
 const User = require("../models/user");
+const {registerUser} = require("../controllers/authController");
+const {Token} = require("../models/token");
 
 const activeSockets = {};
 const setupSocket = (io) => {
@@ -43,11 +45,36 @@ const setupSocket = (io) => {
     console.log('allsockets', allsockets);
     console.log('allsockets.length', allsockets.length);
 
+    const users = await User.find({}, 'username firstName lastName email _id').lean();
+    const formattedUsers = users.map((user) => {
+      return {...user, online: !!activeSockets[user._id]}
+    })
+
+    console.log('users', users);
+    io.emit('users-list', formattedUsers);
+
     socket.on('message', async function (message) {
       console.log('message at backend', message);
       const foundSocket = activeSockets["6523f0684dcf928861788fc7"];
       foundSocket.emit('message', 'response from backend');
     })
+
+    socket.on('logout', async () => {
+      try {
+        socket.disconnect();
+        delete activeSockets[socket.data.userData._id];
+        await Token.deleteOne({ userId: socket.data.userData._id });
+        const formattedUsers = users.map((user) => {
+          return {...user, online: !!activeSockets[user._id]}
+        })
+        io.emit('users-list', formattedUsers);
+      } catch (error) {
+        console.log('error at logout', error)
+      }
+    });
+
+
+
   });
 }
 
