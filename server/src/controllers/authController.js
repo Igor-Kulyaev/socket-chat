@@ -43,7 +43,7 @@ const registerUser = async (req, res, next) => {
     const savedToken = await token.save();
 
     res.cookie('refreshToken', refreshToken, {maxAge: 720000, httpOnly: true});
-    res.status(201).json({ token: accessToken });
+    res.status(201).json({ token: accessToken, user: payload });
   } catch (error) {
     console.error('Error during registration:', error);
     next(error);
@@ -86,7 +86,7 @@ const loginUser = async (req, res, next) => {
     console.log('refreshToken', refreshToken);
 
     res.cookie('refreshToken', refreshToken, {maxAge: 720000, httpOnly: true});
-    res.status(200).json({ token: accessToken });
+    res.status(200).json({ token: accessToken, user: payload });
   } catch (error) {
     console.error('Error during login:', error);
     next(error);
