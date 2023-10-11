@@ -1,9 +1,9 @@
-import {Button, Modal} from "@mui/material";
+import {Modal, Link as MuiLink} from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import {useState} from "react";
+import Link from "next/link";
 
-const style = {
+const modalStyles = {
   position: 'absolute',
   top: '50%',
   left: '50%',
@@ -15,24 +15,23 @@ const style = {
   p: 4,
 };
 
-export const NewConnectionModal = () => {
-  const [open, setOpen] = useState(false);
-  const handleOpen = () => setOpen(true);
+export default function ExpiredSession() {
   return (
-    <div>
-      <Button onClick={handleOpen}>Open modal</Button>
+    <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100vw", height: "100vh" }}>
       <Modal
-        open={open}
+        open
       >
-        <Box sx={style}>
+        <Box sx={modalStyles}>
           <Typography id="modal-modal-title" variant="h6" component="h2">
-            Oops...
+            Your session has expired
           </Typography>
           <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-            You have started a new session in separate tab.
+            Go to the <Link href={"/"} passHref>
+            <MuiLink color="primary">main page</MuiLink>
+          </Link>
           </Typography>
         </Box>
       </Modal>
-    </div>
+    </Box>
   )
 }
