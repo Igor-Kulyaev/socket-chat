@@ -55,7 +55,7 @@ const setupSocket = (io) => {
     console.log('users', users);
     io.emit('users-list', formattedUsers);
 
-    socket.on('message', async function (formData) {
+    socket.on('message', async function (formData, callback) {
       console.log('message at backend', formData);
       try {
         // Check if there is a conversation with the specified members
@@ -85,6 +85,7 @@ const setupSocket = (io) => {
         console.log('Message created:', message);
 
         const recipientSocket = activeSockets[formData.to._id];
+        callback(message);
         if (recipientSocket) {
           recipientSocket.emit('message', message);
         }

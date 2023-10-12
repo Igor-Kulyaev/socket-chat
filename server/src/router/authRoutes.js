@@ -15,6 +15,7 @@ router.post('/logout', logoutUser);
 router.get('/refresh', refreshToken);
 
 router.get('/verify-token', passport.authenticate('jwt', {session: false}), (req, res) => {
+  console.log('req.headers.authorization', req.headers.authorization);
   const authorizationHeader = req.header('Authorization');
   console.log('authorizationHeader', authorizationHeader);
 

@@ -5,6 +5,7 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 const passport = require('./utils/passportjs/passport');
 const authRoutes = require('./router/authRoutes');
+const chatRoutes = require('./router/chatRoutes');
 const ApplicationError = require("./utils/error/ApplicationError");
 const {connectDB} = require("./database/mongoose");
 const corsConfig = require("./config/corsConfig");
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors(corsConfig));
 app.use('/', authRoutes);
+app.use('/', chatRoutes);
 
 app.get('/protected', passport.authenticate('jwt', { session: false }), (req, res) => {
   res.json({ message: 'Protected route accessed successfully!' });
