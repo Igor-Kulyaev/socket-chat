@@ -31,20 +31,35 @@ const getChatMessages = async (req, res, next) => {
 
     console.log('conversation', conversation);
 
-    if (conversation) {
-      // Conversation exists, retrieve messages
-      const messages = await Message.find({
-        conversationId: conversation._id,
-      }).sort({ createdAt: 1 });
-
-      res.status(200).json({ messages });
-    } else {
-      // Conversation doesn't exist, send an empty array of messages
-      res.status(200).json({ messages: [] });
+    if (!conversation) {
+      return res.status(200).json({ messages: [] });
     }
 
+    // Prepare the query for fetching messages
+    const messageQuery = { conversationId: conversation._id };
 
-    res.status(201).json({ });
+    // If lastMessageId is provided, fetch messages older than that message
+    if (lastMessageId) {
+      const lastMessage = await Message.findById(lastMessageId);
+      if (lastMessage) {
+        messageQuery.createdAt = { $lt: lastMessage.createdAt };
+      }
+    }
+
+    // Fetch the messages with pagination
+    // const messages = await Message.find(messageQuery)
+    //   .sort({ createdAt: -1 })
+    //   .limit(10)
+    //   .sort({ createdAt: 1 }); // Re-sort the result in descending order
+
+    const messages = await Message.aggregate([
+      { $match: messageQuery },
+      { $sort: { createdAt: -1 } }, // Sort in descending order
+      { $limit: 10 },
+      // { $sort: { createdAt: 1 } }, // Re-sort in ascending order
+    ]);
+
+    res.status(200).json({ messages });
   } catch (error) {
     console.error('Error during getting messages:', error);
     next(error);

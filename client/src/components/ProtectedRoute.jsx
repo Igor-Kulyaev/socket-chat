@@ -1,10 +1,21 @@
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {ChatSkeleton} from "@/components/ChatSkeleton";
 import { useRouter } from 'next/router'
 import api from "@/utils/api";
 import { io } from "socket.io-client";
 import Button from "@mui/material/Button";
-import {AppBar, Chip, Divider, Drawer, IconButton, List, Modal, TextField, Toolbar} from "@mui/material";
+import {
+  AppBar,
+  Chip,
+  CircularProgress,
+  Divider,
+  Drawer,
+  IconButton,
+  List,
+  Modal,
+  TextField,
+  Toolbar
+} from "@mui/material";
 import PersonPinIcon from '@mui/icons-material/PersonPin';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -19,6 +30,8 @@ import Typography from "@mui/material/Typography";
 import {useAuthorization} from "@/hooks/useAuthorization";
 import {useForm} from "react-hook-form";
 import {format} from "date-fns";
+import InfiniteScroll from "react-infinite-scroll-component";
+import {debounce} from "lodash";
 
 const TOKEN_VERIFICATION_STATUS = {
   initial: "initial",
@@ -46,6 +59,7 @@ const ChatMessage = ({message, recipient}) => {
       backgroundColor: "#faf4cb",
       borderRadius: "10px",
       width: "50%",
+      marginY: "10px",
       ...(!isMessageFromRecipient ? { marginLeft: 'auto' } : {}),
       }}
     >
@@ -79,6 +93,14 @@ const NotificationMessage = ({notification, isLastNotification, users}) => {
   )
 }
 
+const PreviousMessagesLoader = () => {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: "center", marginBottom: "20px" }}>
+      <CircularProgress sx={{color: "#faf4cb"}} />
+    </Box>
+  )
+}
+
 export const ProtectedRoute = ({children}) => {
   const [verificationStatus, setVerificationStatus] = useState(TOKEN_VERIFICATION_STATUS.initial);
   const [socket, setSocket] = useState(null);
@@ -94,6 +116,8 @@ export const ProtectedRoute = ({children}) => {
   const firstMessageRef = useRef();
   const scrollRef = useRef();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [displayType, setDisplayType] = useState("box") // "box" or "infinite-scroll"
 
   const openPopover = (event) => {
     setAnchorEl(event.currentTarget);
@@ -152,7 +176,7 @@ export const ProtectedRoute = ({children}) => {
     if (socket) {
       socket.on("message", (data) => {
         if (recipient && recipient._id === data.userId) {
-          setMessages((prev) => [...prev, data]);
+          setMessages((prev) => [data, ...prev]);
         } else {
           setNotificationsCount(prev => prev + 1)
           setNotifications((prev) => [...prev, data]);
@@ -171,6 +195,17 @@ export const ProtectedRoute = ({children}) => {
     }
   }
 
+  const debouncedScrollToLatestMessage = useCallback(
+    debounce(() => {
+      if (latestMessageRef.current) {
+        latestMessageRef.current.scrollIntoView({
+          behavior: 'smooth',
+        });
+      }
+    }, 300),
+[]
+  );
+
   const onSubmit = async (data) => {
     if (recipient) {
       const formData = {
@@ -179,30 +214,36 @@ export const ProtectedRoute = ({children}) => {
       }
       socket.emit('message', formData, (savedMessage) => {
         scrollRef.current = "bottom";
-        setMessages(prev => [...prev, savedMessage]);
+        setMessages(prev => [savedMessage, ...prev]);
+        debouncedScrollToLatestMessage();
+        // if (latestMessageRef.current) {
+        //   latestMessageRef.current.scrollIntoView({
+        //     behavior: 'smooth',
+        //   });
+        // }
       });
     }
   }
 
-  useEffect(() => {
-    switch (scrollRef.current) {
-      case "top": {
-        return;
-      }
-      case "bottom": {
-        if (latestMessageRef.current) {
-          latestMessageRef.current.scrollIntoView({
-            behavior: 'smooth',
-          });
-        }
-        return;
-      }
-      default: {
-        return;
-      }
-    }
-
-  }, [messages]);
+  // useEffect(() => {
+  //   switch (scrollRef.current) {
+  //     case "top": {
+  //       return;
+  //     }
+  //     case "bottom": {
+  //       if (latestMessageRef.current) {
+  //         latestMessageRef.current.scrollIntoView({
+  //           behavior: 'smooth',
+  //         });
+  //       }
+  //       return;
+  //     }
+  //     default: {
+  //       return;
+  //     }
+  //   }
+  //
+  // }, [messages]);
 
   const selectRecipient = async (user) => {
     try {
@@ -218,12 +259,34 @@ export const ProtectedRoute = ({children}) => {
         });
         scrollRef.current = "bottom";
         setMessages(result.data.messages);
+        if (result.data.messages.length < 10) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+        }
         console.log('result.data.messages', result.data.messages);
       }
     } catch (error) {
       console.log('error at getting chat messages', error);
     }
+  }
 
+  const fetchMoreData = async () => {
+    console.log('fetchMoreData')
+    try {
+      const result = await api.get('chat-messages', {
+        params: {
+          recipientId: recipient._id,
+          lastMessageId: messages[messages.length - 1]._id,
+        }
+      });
+      if (result.data.messages.length < 10) {
+        setHasMore(false);
+      }
+      setMessages((prev) => [...prev, ...result.data.messages]);
+    } catch (error) {
+      console.log('Error at fetching more data', error);
+    }
   }
 
   const closeChat = () => {
@@ -314,20 +377,50 @@ export const ProtectedRoute = ({children}) => {
                       <Button variant="contained" color="inherit" onClick={closeChat}>Close chat</Button>
                     </Box>
                   </Box>
+                  {/*<Box*/}
+                  {/*  sx={{*/}
+                  {/*    margin: "10px",*/}
+                  {/*    height: "65vh",*/}
+                  {/*    overflow: "auto",*/}
+                  {/*  }}*/}
+                  {/*>*/}
+                  {/*  {messages.map(message => <ChatMessage key={message._id} message={message} recipient={recipient} />)}*/}
+                  {/*  <div style={{width: "100%", height: "10px", marginTop: "20px"}} ref={latestMessageRef}/>*/}
+                  {/*</Box>*/}
+                  <div id="scrollableDiv" style={{ height: "65vh", overflow: "auto",
+                    display: "flex",
+                    flexDirection: "column-reverse" }}>
+                    {!!messages.length && (
+                      <InfiniteScroll
+                        dataLength={messages.length}
+                        next={fetchMoreData}
+                        inverse={true}
+                        hasMore={hasMore}
+                        style= {{
+                          display: "flex",
+                          flexDirection: "column-reverse"
+                        }}
+                        loader={<PreviousMessagesLoader />}
+                        scrollableTarget="scrollableDiv"
+                      >
+                        <div style={{width: "100%", height: "10px", marginTop: "20px"}} ref={latestMessageRef}/>
+                        {messages.map((message, index) => (
+                          <ChatMessage key={message._id} message={message} recipient={recipient} />
+                          // <div style={{
+                          //   height: 100,
+                          //   border: "1px solid green",
+                          //   margin: 6,
+                          //   padding: 8
+                          // }} key={index}>
+                          //   div - #{index}
+                          // </div>
+                        ))}
+                      </InfiniteScroll>
+                    )}
+                  </div>
                   <Box
                     sx={{
-                      margin: "10px",
-                      height: "65vh",
-                      overflow: "auto",
-                    }}
-                  >
-                    {messages.map(message => <ChatMessage key={message._id} message={message} recipient={recipient} />)}
-                    <div style={{width: "100%", height: "10px", marginTop: "20px"}} ref={latestMessageRef}/>
-                  </Box>
-
-                  <Box
-                    sx={{
-                      margin: "10px",
+                      marginTop: "auto",
                       height: "20vh",
                       display: "flex",
                       justifyContent: "center",
