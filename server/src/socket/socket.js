@@ -5,6 +5,8 @@ const {registerUser} = require("../controllers/authController");
 const {Token} = require("../models/token");
 const {Conversation} = require("../models/conversation");
 const {Message} = require("../models/message");
+const {validateData} = require("../utils/utils");
+const {messageSchema} = require("../utils/validation/schemas");
 
 const activeSockets = {};
 const setupSocket = (io) => {
@@ -58,6 +60,7 @@ const setupSocket = (io) => {
     socket.on('message', async function (formData, callback) {
       console.log('message at backend', formData);
       try {
+        await validateData(messageSchema, {message: formData.message});
         // Check if there is a conversation with the specified members
         let conversation = await Conversation.findOne({
           members: {$all: [socket.data.userData._id, formData.to._id]},

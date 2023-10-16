@@ -18,7 +18,17 @@ const validateRefreshToken = (token) => {
   }
 }
 
+const validateData = async (schema, data) => {
+  try {
+    await schema.validate(data, { abortEarly: true });
+  } catch (validationError) {
+    const firstValidationError = validationError.errors[0];
+    throw new ApplicationError(400, firstValidationError);
+  }
+}
+
 module.exports = {
   createJWTPayload,
   validateRefreshToken,
+  validateData,
 }

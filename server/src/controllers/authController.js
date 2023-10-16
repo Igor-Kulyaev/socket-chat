@@ -1,12 +1,14 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const {createJWTPayload, validateRefreshToken} = require("../utils/utils");
+const {createJWTPayload, validateRefreshToken, validateData} = require("../utils/utils");
 const jwtConfig = require("../config/jwtConfig");
 const User = require("../models/user");
 const {Token} = require("../models/token");
 const ApplicationError = require("../utils/error/ApplicationError");
+const {registrationSchema, loginSchema} = require("../utils/validation/schemas");
 const registerUser = async (req, res, next) => {
   try {
+    await validateData(registrationSchema, req.body);
     const existingUser = await User.findOne({ username: req.body.username });
     if (existingUser) {
       throw new ApplicationError(400, 'Username is taken');
@@ -52,6 +54,7 @@ const registerUser = async (req, res, next) => {
 
 const loginUser = async (req, res, next) => {
   try {
+    await validateData(loginSchema, req.body);
     const user = await User.findOne({ username: req.body.username });
     if (!user) {
       throw new ApplicationError(404, 'User not found');
