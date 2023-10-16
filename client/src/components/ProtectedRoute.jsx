@@ -34,6 +34,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import {debounce} from "lodash";
 import * as Yup from "yup";
 import {yupResolver} from "@hookform/resolvers/yup";
+import ClosableSnackbar from "@/components/ClosableSnackbar";
 
 const asciiRegularExp = /^[\x20-\x7E]+$/; // \x20: Represents the space character. \x7E: Represents the tilde character.
 
@@ -131,7 +132,8 @@ export const ProtectedRoute = ({children}) => {
   const scrollRef = useRef();
   const [anchorEl, setAnchorEl] = useState(null);
   const [hasMore, setHasMore] = useState(false);
-  const [displayType, setDisplayType] = useState("box") // "box" or "infinite-scroll"
+  const [displayType, setDisplayType] = useState("box") // "box" or "infinite-scroll"\
+  const [error, setError] = useState("");
 
   const openPopover = (event) => {
     setAnchorEl(event.currentTarget);
@@ -226,10 +228,14 @@ export const ProtectedRoute = ({children}) => {
         message: data.message,
         to: recipient
       }
-      socket.emit('message', formData, (savedMessage) => {
-        scrollRef.current = "bottom";
-        setMessages(prev => [savedMessage, ...prev]);
-        debouncedScrollToLatestMessage();
+      socket.emit('message', formData, (error, savedMessage) => {
+        if (error) {
+          setError(error);
+        } else {
+          scrollRef.current = "bottom";
+          setMessages(prev => [savedMessage, ...prev]);
+          debouncedScrollToLatestMessage();
+        }
         // if (latestMessageRef.current) {
         //   latestMessageRef.current.scrollIntoView({
         //     behavior: 'smooth',
@@ -281,6 +287,8 @@ export const ProtectedRoute = ({children}) => {
         console.log('result.data.messages', result.data.messages);
       }
     } catch (error) {
+      setHasMore(false);
+      setError(error?.response?.data?.message || error?.message);
       console.log('error at getting chat messages', error);
     }
   }
@@ -299,6 +307,8 @@ export const ProtectedRoute = ({children}) => {
       }
       setMessages((prev) => [...prev, ...result.data.messages]);
     } catch (error) {
+      setHasMore(false);
+      setError(error?.response?.data?.message || error?.message);
       console.log('Error at fetching more data', error);
     }
   }
@@ -315,6 +325,9 @@ export const ProtectedRoute = ({children}) => {
       case TOKEN_VERIFICATION_STATUS.verified: {
         return (
           <Box>
+            {error && (
+              <ClosableSnackbar message={error} setMessage={setError} severity="error" />
+            )}
             <AppBar position="static">
               <Toolbar style={{ justifyContent: 'flex-end' }}>
                 <Box>

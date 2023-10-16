@@ -11,7 +11,9 @@ import {decryptToken, encryptToken, USER_IP} from "@/utils/encryption";
 import {AuthSkeleton} from "@/components/AuthSkeleton";
 import {useAuthorization} from "@/hooks/useAuthorization";
 import * as Yup from 'yup';
-import { yupResolver } from '@hookform/resolvers/yup'; // Import yupResolver
+import { yupResolver } from '@hookform/resolvers/yup';
+import ClosableAlert from "@/components/ClosableAlert";
+import ClosableSnackbar from "@/components/ClosableSnackbar"; // Import yupResolver
 
 const registrationSchema = Yup.object().shape({
   username: Yup.string()
@@ -74,7 +76,7 @@ function AuthTabPanel(props) {
   );
 }
 
-function AuthRegistration() {
+function AuthRegistration({setError}) {
   const { register, handleSubmit, watch, formState: { errors } } = useForm({
     resolver: yupResolver(registrationSchema), // Use the Yup schema resolver
   });
@@ -95,6 +97,7 @@ function AuthRegistration() {
       await router.push("/chat");
 
     } catch (error) {
+      setError(error?.response?.data?.message || error?.message);
       console.log('error', error);
     }
   }
@@ -139,7 +142,7 @@ function AuthRegistration() {
   )
 }
 
-function AuthLogin() {
+function AuthLogin({setError}) {
   const { register, handleSubmit, watch, formState: { errors } } = useForm({
     resolver: yupResolver(loginSchema), // Use the Yup schema resolver
   });
@@ -157,6 +160,7 @@ function AuthLogin() {
       await router.push("/chat");
 
     } catch (error) {
+      setError(error?.response?.data?.message || error?.message);
       console.log('error', error);
     }
   }
@@ -187,6 +191,8 @@ export default function AuthorizationComponent() {
   const [value, setValue] = useState(0);
   const router = useRouter();
   const [isInitialRender, setIsInitialRender] = useState(true);
+  const [error, setError] = useState("");
+  console.log('error at component', error);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -211,6 +217,10 @@ export default function AuthorizationComponent() {
     <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100vw", height: "100vh" }}>
       <Box sx={{backgroundColor: "#d8e2ff", padding: "50px", height: "85vh", borderRadius: "25px"}}>
         <Typography variant="h3" sx={{ textAlign: 'center', color: "#02569e" }}>Chat Authorization Form</Typography>
+        {error && (
+          // <ClosableAlert message={error} setMessage={setError} severity="error"/>
+          <ClosableSnackbar message={error} setMessage={setError} severity="error" />
+        )}
         <Box sx={{ borderBottom: 1, borderColor: 'divider', display: "flex", justifyContent: "center" }}>
           <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
             <Tab label="Registration" />
@@ -218,10 +228,10 @@ export default function AuthorizationComponent() {
           </Tabs>
         </Box>
         <AuthTabPanel value={value} index={0}>
-          <AuthRegistration/>
+          <AuthRegistration setError={setError}/>
         </AuthTabPanel>
         <AuthTabPanel value={value} index={1}>
-          <AuthLogin/>
+          <AuthLogin setError={setError} />
         </AuthTabPanel>
       </Box>
     </Box>

@@ -88,11 +88,13 @@ const setupSocket = (io) => {
         console.log('Message created:', message);
 
         const recipientSocket = activeSockets[formData.to._id];
-        callback(message);
+        callback(null, message);
         if (recipientSocket) {
           recipientSocket.emit('message', message);
         }
       } catch (error) {
+        const responseError = typeof error === "string" ? error : (error?.message || "Error at sending message")
+        callback(responseError);
         console.error('Error handling conversation:', error);
       }
       // const foundSocket = activeSockets["6523f0684dcf928861788fc7"];
