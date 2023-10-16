@@ -9,7 +9,7 @@ import {
   Chip,
   CircularProgress,
   Divider,
-  Drawer,
+  Drawer, FormHelperText,
   IconButton,
   List,
   Modal,
@@ -32,6 +32,18 @@ import {useForm} from "react-hook-form";
 import {format} from "date-fns";
 import InfiniteScroll from "react-infinite-scroll-component";
 import {debounce} from "lodash";
+import * as Yup from "yup";
+import {yupResolver} from "@hookform/resolvers/yup";
+
+const asciiRegularExp = /^[\x20-\x7E]+$/; // \x20: Represents the space character. \x7E: Represents the tilde character.
+
+const messageSchema = Yup.object().shape({
+  message: Yup.string()
+    .min(1, 'Message must be at least 1 character')
+    .max(200, 'Message must be at most 200 characters')
+    .matches(asciiRegularExp, 'Message can only contain Latin characters or numbers')
+    .required('Message is required'),
+});
 
 const TOKEN_VERIFICATION_STATUS = {
   initial: "initial",
@@ -107,7 +119,9 @@ export const ProtectedRoute = ({children}) => {
   const router = useRouter();
   const [usersList, setUsersList] = useState([]);
   const {authUser, setAuthUser} = useAuthorization();
-  const { register, handleSubmit, watch, formState: { errors } } = useForm();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+    resolver: yupResolver(messageSchema), // Use the Yup schema resolver
+  });
   const [recipient, setRecipient] = useState(null);
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
@@ -430,7 +444,6 @@ export const ProtectedRoute = ({children}) => {
                     <form onSubmit={handleSubmit(onSubmit)}>
                       <Box sx={{display: "flex", justifyContent: "center"}}>
                         <TextField
-                          id="filled-multiline-static"
                           label="Message"
                           multiline
                           rows={5}
@@ -443,6 +456,9 @@ export const ProtectedRoute = ({children}) => {
                           }}
                         />
                         <Button variant="contained" type="submit" sx={{marginLeft: "25px"}}>Send</Button>
+                      </Box>
+                      <Box sx={{display: "flex", justifyContent: "start"}}>
+                        {errors.message?.message && <FormHelperText sx={{color: "#faf4cb"}}>{errors.message?.message}</FormHelperText>}
                       </Box>
                     </form>
                   </Box>

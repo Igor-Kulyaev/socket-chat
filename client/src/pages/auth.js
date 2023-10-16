@@ -3,13 +3,56 @@ import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import {useEffect, useState} from "react";
-import {Button, TextField} from "@mui/material";
+import {Button, FormHelperText, TextField} from "@mui/material";
 import { useForm } from "react-hook-form";
 import api from "@/utils/api";
 import {useRouter} from "next/router";
 import {decryptToken, encryptToken, USER_IP} from "@/utils/encryption";
 import {AuthSkeleton} from "@/components/AuthSkeleton";
 import {useAuthorization} from "@/hooks/useAuthorization";
+import * as Yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup'; // Import yupResolver
+
+const registrationSchema = Yup.object().shape({
+  username: Yup.string()
+    .max(20, 'Username must be at most 20 characters')
+    .matches(/^[A-Za-z0-9]+$/, 'Username can only contain Latin characters or numbers')
+    .required('Username is required'),
+
+  firstName: Yup.string()
+    .max(20, 'First name must be at most 20 characters')
+    .matches(/^[A-Za-z0-9]+$/, 'First name can only contain Latin characters or numbers')
+    .required('First name is required'),
+
+  lastName: Yup.string()
+    .max(20, 'Last name must be at most 20 characters')
+    .matches(/^[A-Za-z0-9]+$/, 'Last name can only contain Latin characters or numbers')
+    .required('Last name is required'),
+
+  email: Yup.string()
+    .email('Invalid email format')
+    .required('Email is required'),
+
+  password: Yup.string()
+    .min(5, 'Password must be at least 5 characters')
+    .max(20, 'Password must be at most 20 characters')
+    .matches(/^[A-Za-z0-9]+$/, 'Password can only contain Latin characters or numbers')
+    .required('Password is required'),
+});
+
+const loginSchema = Yup.object().shape({
+  username: Yup.string()
+    .max(20, 'Username must be at most 20 characters')
+    .matches(/^[A-Za-z0-9]+$/, 'Username can only contain Latin characters or numbers')
+    .required('Username is required'),
+
+  password: Yup.string()
+    .min(5, 'Password must be at least 5 characters')
+    .max(20, 'Password must be at most 20 characters')
+    .matches(/^[A-Za-z0-9]+$/, 'Password can only contain Latin characters or numbers')
+    .required('Password is required'),
+});
+
 
 function AuthTabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -32,9 +75,14 @@ function AuthTabPanel(props) {
 }
 
 function AuthRegistration() {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+    resolver: yupResolver(registrationSchema), // Use the Yup schema resolver
+  });
   const router = useRouter();
   const {authUser, setAuthUser} = useAuthorization();
+
+  console.log('errors', errors);
+  console.log('render');
   const onSubmit = async (data) => {
     try {
       const result = await api.post('register', data, );
@@ -53,20 +101,35 @@ function AuthRegistration() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-        <TextField id="outlined-basic" label="Username" variant="outlined" {...register("username")} />
+      <Box sx={{display: "flex", justifyContent: "center"}}>
+        <TextField label="Username" variant="outlined" {...register("username")} />
       </Box>
       <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-        <TextField id="outlined-basic" label="First name" variant="outlined" {...register("firstName")} />
+        {errors.username?.message && <FormHelperText error>{errors.username?.message}</FormHelperText>}
+      </Box>
+      <Box sx={{display: "flex", justifyContent: "center"}}>
+        <TextField label="First name" variant="outlined" {...register("firstName")} />
       </Box>
       <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-        <TextField id="outlined-basic" label="Last name" variant="outlined" {...register("lastName")} />
+        {errors.firstName?.message && <FormHelperText error>{errors.firstName?.message}</FormHelperText>}
+      </Box>
+      <Box sx={{display: "flex", justifyContent: "center"}}>
+        <TextField label="Last name" variant="outlined" {...register("lastName")} />
       </Box>
       <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-        <TextField id="outlined-basic" label="Email" variant="outlined" {...register("email")} />
+        {errors.lastName?.message && <FormHelperText error>{errors.lastName?.message}</FormHelperText>}
+      </Box>
+      <Box sx={{display: "flex", justifyContent: "center"}}>
+        <TextField label="Email" variant="outlined" {...register("email")} />
       </Box>
       <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-        <TextField id="outlined-basic" label="Password" variant="outlined" {...register("password")}/>
+        {errors.email?.message && <FormHelperText error>{errors.email?.message}</FormHelperText>}
+      </Box>
+      <Box sx={{display: "flex", justifyContent: "center"}}>
+        <TextField label="Password" variant="outlined" {...register("password")}/>
+      </Box>
+      <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
+        {errors.password?.message && <FormHelperText error>{errors.password?.message}</FormHelperText>}
       </Box>
       <Box sx={{display: "flex", justifyContent: "center"}}>
         <Button variant="contained" type="submit" sx={{marginRight: "60px"}}>Submit</Button>
@@ -77,7 +140,9 @@ function AuthRegistration() {
 }
 
 function AuthLogin() {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+    resolver: yupResolver(loginSchema), // Use the Yup schema resolver
+  });
   const router = useRouter();
   const {authUser, setAuthUser} = useAuthorization();
   const onSubmit = async (data) => {
@@ -98,11 +163,17 @@ function AuthLogin() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-        <TextField id="outlined-basic" label="Username" variant="outlined" {...register("username")} />
+      <Box sx={{display: "flex", justifyContent: "center"}}>
+        <TextField label="Username" variant="outlined" {...register("username")} />
       </Box>
       <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
-        <TextField id="outlined-basic" label="Password" variant="outlined" {...register("password")}/>
+        {errors.username?.message && <FormHelperText error>{errors.username?.message}</FormHelperText>}
+      </Box>
+      <Box sx={{display: "flex", justifyContent: "center"}}>
+        <TextField label="Password" variant="outlined" {...register("password")}/>
+      </Box>
+      <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
+        {errors.password?.message && <FormHelperText error>{errors.password?.message}</FormHelperText>}
       </Box>
       <Box sx={{display: "flex", justifyContent: "center"}}>
         <Button variant="contained" type="submit" sx={{marginRight: "60px"}}>Submit</Button>
