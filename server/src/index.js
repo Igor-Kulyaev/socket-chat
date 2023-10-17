@@ -22,10 +22,6 @@ app.use(cors(corsConfig));
 app.use('/', authRoutes);
 app.use('/', chatRoutes);
 
-app.get('/protected', passport.authenticate('jwt', { session: false }), (req, res) => {
-  res.json({ message: 'Protected route accessed successfully!' });
-});
-
 app.route("*").all((req, res, next) => {
   next(new ApplicationError(404, "Item not found"));
 });

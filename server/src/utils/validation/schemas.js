@@ -40,7 +40,7 @@ const loginSchema = yup.object().shape({
     .required('Password is required'),
 });
 
-const asciiRegularExp = /^[\x20-\x7E]+$/; // \x20: Represents the space character. \x7E: Represents the tilde character.
+const asciiRegularExp = /^[\x20-\x7E]+$/; // from \x20 the space character to \x7E the tilde character.
 
 const messageSchema = yup.object().shape({
   message: yup.string()

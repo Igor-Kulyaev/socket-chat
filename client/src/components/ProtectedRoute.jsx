@@ -179,7 +179,7 @@ export const ProtectedRoute = ({children}) => {
       socket.on("connect", () => {
       })
       socket.on("disconnect", () => {
-        // router.push("/expired-session");
+        router.push("/expired-session");
       })
       socket.on("users-list", (data) => {
         setUsersList(data);
@@ -206,8 +206,8 @@ export const ProtectedRoute = ({children}) => {
 
   const logout = () => {
     if (socket) {
-      socket.emit('logout');
       localStorage.removeItem("token");
+      socket.emit('logout');
     }
   }
 

@@ -1,50 +1,17 @@
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const {createJWTPayload, validateRefreshToken, validateData} = require("../utils/utils");
 const jwtConfig = require("../config/jwtConfig");
-const User = require("../models/user");
-const {Token} = require("../models/token");
-const ApplicationError = require("../utils/error/ApplicationError");
-const {registrationSchema, loginSchema} = require("../utils/validation/schemas");
+const {registerUserService, loginUserService, logoutUserService, refreshTokenService} = require("../services/authService");
+const FIFTEEN_MINUTES = 15 * 60 * 1000;
+
 const registerUser = async (req, res, next) => {
   try {
-    await validateData(registrationSchema, req.body);
-    const existingUser = await User.findOne({ username: req.body.username });
-    if (existingUser) {
-      throw new ApplicationError(400, 'Username is taken');
-    }
+    const {
+      refreshToken,
+      accessToken,
+      payload,
+    } = await registerUserService(req.body);
 
-    const hashedPassword = await bcrypt.hash(req.body.password, 10);
-
-    const newUser = new User({
-      username: req.body.username,
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      email: req.body.email,
-      password: hashedPassword,
-      role: 'user',
-      authType: 'internal',
-    });
-
-    const savedUser = await newUser.save();
-    const payload = createJWTPayload(savedUser);
-
-    const accessToken = jwt.sign(payload, jwtConfig.jwtAccessSecret, {
-      expiresIn: '10m',
-    });
-    const refreshToken = jwt.sign(payload, jwtConfig.jwtRefreshSecret, {
-      expiresIn: '15m',
-    });
-
-    const token = new Token({
-      userId: savedUser._id,
-      refreshToken: refreshToken,
-    });
-
-    // Save the token to the database
-    const savedToken = await token.save();
-
-    res.cookie('refreshToken', refreshToken, {maxAge: 720000, httpOnly: true});
+    res.cookie('refreshToken', refreshToken, {maxAge: FIFTEEN_MINUTES, httpOnly: true});
     res.status(201).json({ token: accessToken, user: payload });
   } catch (error) {
     console.error('Error during registration:', error);
@@ -54,41 +21,13 @@ const registerUser = async (req, res, next) => {
 
 const loginUser = async (req, res, next) => {
   try {
-    await validateData(loginSchema, req.body);
-    const user = await User.findOne({ username: req.body.username });
-    if (!user) {
-      throw new ApplicationError(404, 'User not found');
-    }
+    const {
+      refreshToken,
+      accessToken,
+      payload,
+    } = await loginUserService(req.body);
 
-    const passwordMatch = await bcrypt.compare(req.body.password, user.password);
-    if (!passwordMatch) {
-      throw new ApplicationError(401, 'Incorrect password');
-    }
-
-    const payload = createJWTPayload(user);
-
-    const accessToken = jwt.sign(payload, jwtConfig.jwtAccessSecret, {
-      expiresIn: '10m',
-    });
-    const refreshToken = jwt.sign(payload, jwtConfig.jwtRefreshSecret, {
-      expiresIn: '15m',
-    });
-
-    const updatedOrCreatedToken = await Token.findOneAndUpdate(
-      { userId: user._id },
-      {
-        refreshToken: refreshToken,
-        updatedAt: new Date(),
-      },
-      {
-        upsert: true,
-        new: true,
-      }
-    )
-
-    console.log('refreshToken', refreshToken);
-
-    res.cookie('refreshToken', refreshToken, {maxAge: 720000, httpOnly: true});
+    res.cookie('refreshToken', refreshToken, {maxAge: FIFTEEN_MINUTES, httpOnly: true});
     res.status(200).json({ token: accessToken, user: payload });
   } catch (error) {
     console.error('Error during login:', error);
@@ -99,8 +38,7 @@ const loginUser = async (req, res, next) => {
 const logoutUser = async (req, res, next) => {
   try {
     const {refreshToken} = req.cookies;
-    const {_id} = validateRefreshToken(refreshToken);
-    await Token.deleteOne({ userId: _id });
+    await logoutUserService(refreshToken);
     res.clearCookie('refreshToken');
     res.status(200).json({message: 'User has logged out'});
   } catch (error) {
@@ -112,42 +50,44 @@ const logoutUser = async (req, res, next) => {
 const refreshToken = async (req, res, next) => {
   try {
     const {refreshToken} = req.cookies;
-    if (!refreshToken) {
-      throw new ApplicationError(401, 'User is not authorized');
-    }
-    const tokenPayload = validateRefreshToken(refreshToken);
-    const tokenFromDb = await Token.findOne({ userId: tokenPayload._id });
+    const {
+      newRefreshToken,
+      newAccessToken,
+      refreshedPayload
+    } = await refreshTokenService(refreshToken);
 
-    console.log('tokenFromDb', tokenFromDb);
-
-    if (!tokenFromDb) {
-      throw new ApplicationError(401, 'User is not authorized');
-    }
-
-    const newAccessToken = jwt.sign(createJWTPayload(tokenPayload), jwtConfig.jwtAccessSecret, {
-      expiresIn: '10m',
-    });
-    const newRefreshToken = jwt.sign(createJWTPayload(tokenPayload), jwtConfig.jwtRefreshSecret, {
-      expiresIn: '15m',
-    });
-
-    const updatedToken = await Token.findOneAndUpdate(
-      { userId: tokenPayload._id },
-      {
-        refreshToken: refreshToken,
-        updatedAt: new Date(),
-      },
-      {
-        upsert: false,
-        new: true,
-      }
-    )
-
-    res.cookie('refreshToken', newRefreshToken, {maxAge: 720000, httpOnly: true});
-    res.status(200).json({ token: newAccessToken });
+    res.cookie('refreshToken', newRefreshToken, {maxAge: FIFTEEN_MINUTES, httpOnly: true});
+    res.status(200).json({ token: newAccessToken, user: refreshedPayload });
   } catch (error) {
     console.error('Error during refresh:', error);
     next(error);
+  }
+}
+
+const verifyToken = async (req, res) => {
+  const authorizationHeader = req.header('Authorization');
+  if (!authorizationHeader) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  const tokenParts = authorizationHeader.split(' ');
+  if (tokenParts.length !== 2 || tokenParts[0] !== 'Bearer') {
+    return res.status(401).json({ message: 'Invalid token format' });
+  }
+
+  const token = tokenParts[1];
+
+  try {
+    const checkedToken = jwt.verify(token, jwtConfig.jwtAccessSecret);
+    const userData = {
+      username: checkedToken.username,
+      _id: checkedToken._id,
+      email: checkedToken.email,
+      role: checkedToken.role
+    }
+    res.status(200).json({message: 'Verified', user: userData});
+  } catch (error) {
+    res.status(401).json({ message: 'Unauthorized', error: error.message });
   }
 }
 
@@ -156,4 +96,5 @@ module.exports = {
   loginUser,
   logoutUser,
   refreshToken,
+  verifyToken,
 }

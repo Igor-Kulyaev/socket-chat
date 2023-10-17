@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-// need to add userCreation date
+// need to add createdAt, updatedAt dates
 const userSchema = mongoose.Schema({
   username:{
     type:String,
