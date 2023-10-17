@@ -38,7 +38,7 @@ setupSocket(io);
 connectDB()
   .then(() => {
     httpServer.listen(port, () => {
-      console.log(`Example app listening on port ${port}`)
+      console.log(`App listening on port ${port}`)
     })
   })
   .catch(err => console.log(err));

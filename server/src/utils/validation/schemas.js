@@ -1,5 +1,7 @@
 const yup = require('yup');
 
+const asciiRegularExp = /^[\x20-\x7E]+$/; // from \x20 the space character to \x7E the tilde character.
+
 const registrationSchema = yup.object().shape({
   username: yup.string()
     .max(20, 'Username must be at most 20 characters')
@@ -39,8 +41,6 @@ const loginSchema = yup.object().shape({
     .matches(/^[A-Za-z0-9]+$/, 'Password can only contain Latin characters or numbers')
     .required('Password is required'),
 });
-
-const asciiRegularExp = /^[\x20-\x7E]+$/; // from \x20 the space character to \x7E the tilde character.
 
 const messageSchema = yup.object().shape({
   message: yup.string()
