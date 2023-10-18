@@ -38,7 +38,7 @@ export const LoginForm = ({setError}) => {
         {errors.username?.message && <FormHelperText error>{errors.username?.message}</FormHelperText>}
       </Box>
       <Box sx={{display: "flex", justifyContent: "center"}}>
-        <TextField label="Password" variant="outlined" {...register("password")}/>
+        <TextField label="Password" variant="outlined" type="password" {...register("password")}/>
       </Box>
       <Box sx={{marginBottom: "20px", display: "flex", justifyContent: "center"}}>
         {errors.password?.message && <FormHelperText error>{errors.password?.message}</FormHelperText>}
