@@ -26,9 +26,7 @@ export default function ExpiredSession() {
             Your session has expired
           </Typography>
           <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-            Go to the <Link href={"/"} passHref>
-            <MuiLink color="primary">main page</MuiLink>
-          </Link>
+            Go to the <MuiLink href={"/"} color="primary" component={Link}>main page</MuiLink>
           </Typography>
         </Box>
       </Modal>

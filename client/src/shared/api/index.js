@@ -1,6 +1,6 @@
 import axios from "axios";
-import {decryptToken, encryptToken, USER_IP} from "@/utils/encryption";
 export const URL = "http://localhost:5000";
+const PROHIBITED_REFRESH_PATHS = ['verify-token', 'refresh'];
 
 const api = axios.create({
   baseURL: URL,
@@ -9,13 +9,10 @@ const api = axios.create({
 
 api.interceptors.request.use(async (config) => {
   if (localStorage.getItem("token")) {
-    // const decryptedToken = decryptToken(localStorage.getItem("token"), USER_IP.IP_ADDRESS);
     config.headers.Authorization = `Bearer ${localStorage.getItem("token")}`;
   }
   return config;
 });
-
-const PROHIBITED_REFRESH_PATHS = ['verify-token', 'refresh'];
 
 api.interceptors.response.use(
   (config) => config,
@@ -30,7 +27,6 @@ api.interceptors.response.use(
       originalRequest._isRetry = true;
       try {
         const response = await api.get(`refresh`);
-        // const encryptedToken = encryptToken(response.data.token, USER_IP.IP_ADDRESS);
         localStorage.setItem("token", response.data.token);
         return api.request(originalRequest);
       } catch (e) {
