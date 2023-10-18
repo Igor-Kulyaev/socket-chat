@@ -1,9 +1,9 @@
 import {useEffect, useState} from "react";
 import {ChatSkeleton} from "@/widgets/PageSkeletons/ChatSkeleton";
 import { io } from "socket.io-client";
-import api from "@/shared/api";
 import {useAuthorization} from "@/hooks/useAuthorization";
 import {RedirectComponent} from "@/shared/ui/RedirectComponent/RedirectComponent";
+import api from "@/shared/api";
 
 const TOKEN_VERIFICATION_STATUS = {
   initial: "initial",

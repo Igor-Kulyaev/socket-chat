@@ -93,7 +93,7 @@ export const Chat = ({
                 scrollableTarget="scrollableDiv"
               >
                 <div style={{width: "100%", height: "10px", marginTop: "20px"}} ref={latestMessageRef}/>
-                {messages.map((message, index) => (
+                {messages.map((message) => (
                   <ChatMessage key={message._id} message={message} recipient={recipient} />
                 ))}
               </InfiniteScroll>

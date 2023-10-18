@@ -15,7 +15,7 @@ const modalStyles = {
   p: 4,
 };
 
-export default function ExpiredSession() {
+export default function ExpiredSessionPage() {
   return (
     <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100vw", height: "100vh" }}>
       <Modal
