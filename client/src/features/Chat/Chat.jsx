@@ -29,8 +29,8 @@ export const Chat = ({
   setMessages,
 }) => {
   const latestMessageRef = useRef();
-  const {authUser, setAuthUser, socket, setSocket} = useAuthorization();
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  const {socket} = useAuthorization();
+  const { register, handleSubmit, formState: { errors }, reset } = useForm({
     resolver: yupResolver(messageSchema),
   });
 
@@ -55,6 +55,7 @@ export const Chat = ({
         if (error) {
           setError(error);
         } else {
+          reset();
           setMessages(prev => [savedMessage, ...prev]);
           debouncedScrollToLatestMessage();
         }
