@@ -38,3 +38,6 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in the browser to display application.
+
+## Video
+https://github.com/Igor-Kulyaev/socket-chat/blob/master/video.mp4
