@@ -40,4 +40,4 @@ pnpm dev
 Open [http://localhost:3000](http://localhost:3000) in the browser to display application.
 
 ## Video
-https://github.com/Igor-Kulyaev/socket-chat/blob/master/video.mp4
+<video src="https://user-images.githubusercontent.com/socket-chat/video.mp4" width="320" height="240" controls></video>
