@@ -29,7 +29,7 @@ const setupSocket = (io) => {
         next();
       }
     } catch (error) {
-      console.log('error at socket middleware', error);
+      console.log('Error at socket middleware', error);
     }
   });
 

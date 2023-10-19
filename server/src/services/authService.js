@@ -94,15 +94,6 @@ const loginUserService = async (bodyData) => {
   }
 }
 
-const logoutUserService = async (refreshToken) => {
-  try {
-    const {_id} = validateRefreshToken(refreshToken);
-    await Token.deleteOne({ userId: _id });
-  } catch (error) {
-    throw new ApplicationError(error.status || 500, error.message);
-  }
-}
-
 const refreshTokenService = async (refreshToken) => {
   try {
     if (!refreshToken) {
@@ -149,6 +140,5 @@ const refreshTokenService = async (refreshToken) => {
 module.exports = {
   registerUserService,
   loginUserService,
-  logoutUserService,
   refreshTokenService,
 }

@@ -6,7 +6,6 @@ const router = express.Router();
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
-router.post('/logout', logoutUser);
 router.get('/refresh', refreshToken);
 router.get('/verify-token', passport.authenticate('jwt', {session: false}), verifyToken);
 

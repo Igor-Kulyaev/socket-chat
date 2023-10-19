@@ -35,18 +35,6 @@ const loginUser = async (req, res, next) => {
   }
 }
 
-const logoutUser = async (req, res, next) => {
-  try {
-    const {refreshToken} = req.cookies;
-    await logoutUserService(refreshToken);
-    res.clearCookie('refreshToken');
-    res.status(200).json({message: 'User has logged out'});
-  } catch (error) {
-    console.error('Error during logout:', error);
-    next(error);
-  }
-}
-
 const refreshToken = async (req, res, next) => {
   try {
     const {refreshToken} = req.cookies;
@@ -94,7 +82,6 @@ const verifyToken = async (req, res) => {
 module.exports = {
   registerUser,
   loginUser,
-  logoutUser,
   refreshToken,
   verifyToken,
 }
