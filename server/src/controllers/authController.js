@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const jwtConfig = require("../config/jwtConfig");
-const {registerUserService, loginUserService, logoutUserService, refreshTokenService} = require("../services/authService");
+const {registerUserService, loginUserService, refreshTokenService} = require("../services/authService");
 const FIFTEEN_MINUTES = 15 * 60 * 1000;
 
 const registerUser = async (req, res, next) => {
