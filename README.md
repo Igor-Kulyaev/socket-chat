@@ -39,5 +39,11 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) in the browser to display application.
 
+
+
+https://github.com/Igor-Kulyaev/socket-chat/assets/90397740/03af8564-a591-48bc-98ae-0ca7009fa59e
+
+
+
 ## Video
 <video src="https://github.com/Igor-Kulyaev/socket-chat/blob/f354f92977106a9f0823aee1dae1b06cbb016b87/video.mp4" width="320" height="240" controls></video>
